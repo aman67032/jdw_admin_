@@ -33,6 +33,10 @@ const paymentSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    customFields: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
     amount: {
       type: Number,
       required: true,
