@@ -7,17 +7,43 @@ const paymentRoutes = require("./routes/payments");
 const webhookRoutes = require("./routes/webhook");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 // ─── Middleware ───
 app.use(
     cors({
-        origin: ["http://localhost:3000", "http://localhost:3001"],
+        origin: [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "https://jdw-admin.vercel.app"
+        ],
         credentials: true,
     })
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Global DB Connection for Serverless
+let isConnected = false;
+const connectDB = async () => {
+    if (isConnected || mongoose.connection.readyState === 1) {
+        isConnected = true;
+        return;
+    }
+    try {
+        console.log("Connecting to MongoDB...");
+        const db = await mongoose.connect(process.env.MONGODB_URI);
+        isConnected = db.connections[0].readyState === 1;
+        console.log("✅ Connected to MongoDB");
+    } catch (error) {
+        console.error("❌ Failed to connect to MongoDB:", error.message);
+    }
+};
+
+// Apply DB connection middleware to API routes
+app.use("/api", async (req, res, next) => {
+    await connectDB();
+    next();
+});
 
 // ─── Routes ───
 app.use("/api/payments", paymentRoutes);
@@ -32,23 +58,14 @@ app.get("/api/health", (req, res) => {
     });
 });
 
-// ─── MongoDB Connection & Server Start ───
-async function startServer() {
-    try {
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log("✅ Connected to MongoDB");
-
+// Start server if running locally, otherwise export for Vercel
+if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+    const PORT = process.env.PORT || 5000;
+    connectDB().then(() => {
         app.listen(PORT, () => {
             console.log(`🚀 JDW Backend running on http://localhost:${PORT}`);
-            console.log(`   Health: http://localhost:${PORT}/api/health`);
-            console.log(`   Payments: http://localhost:${PORT}/api/payments/:passType`);
-            console.log(`   Sync: http://localhost:${PORT}/api/payments/sync/:passType`);
-            console.log(`   Webhook: POST http://localhost:${PORT}/api/webhook/cashfree`);
         });
-    } catch (error) {
-        console.error("❌ Failed to start server:", error.message);
-        process.exit(1);
-    }
+    });
 }
 
-startServer();
+module.exports = app;
