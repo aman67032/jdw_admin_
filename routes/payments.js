@@ -139,6 +139,59 @@ router.get("/sync/:passType", async (req, res) => {
 });
 
 
+// ─── POST /api/payments/import ───
+// Manually imports a specific order ID from Cashfree
+router.post("/import", async (req, res) => {
+    try {
+        const { orderId, passType } = req.body;
+
+        if (!orderId || !passType) {
+            return res.status(400).json({ success: false, error: "Missing orderId or passType" });
+        }
+
+        const apiUrl = `${process.env.CASHFREE_API_URL}/orders/${orderId}`;
+        const response = await axios.get(apiUrl, {
+            headers: getCashfreeHeaders(),
+        });
+
+        const order = response.data;
+        const customerDetails = order.customer_details || {};
+
+        const orderData = {
+            orderId: order.order_id || order.cf_order_id,
+            cfOrderId: order.cf_order_id,
+            linkId: PASS_TYPE_TO_LINK[passType] || "",
+            passType: passType,
+            customerName: customerDetails.customer_name || "",
+            customerEmail: customerDetails.customer_email || "",
+            customerPhone: customerDetails.customer_phone || "",
+            amount: order.order_amount || 0,
+            currency: order.order_currency || "INR",
+            status: order.order_status || "PENDING",
+            orderNote: order.order_note || "",
+            rawData: order,
+        };
+
+        const savedOrder = await Payment.findOneAndUpdate(
+            { orderId: orderData.orderId },
+            orderData,
+            { upsert: true, new: true }
+        );
+
+        res.json({
+            success: true,
+            message: `Successfully imported order ${orderId}`,
+            data: savedOrder
+        });
+    } catch (error) {
+        console.error("Manual import error:", error.response?.data || error.message);
+        res.status(500).json({
+            success: false,
+            error: error.response?.data?.message || "Check if the Order ID is correct"
+        });
+    }
+});
+
 // ─── GET /api/payments/:passType ───
 // Returns all payments for a given pass type with search & pagination
 router.get("/:passType", async (req, res) => {
