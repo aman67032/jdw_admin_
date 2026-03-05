@@ -5,6 +5,8 @@ const mongoose = require("mongoose");
 
 const paymentRoutes = require("./routes/payments");
 const webhookRoutes = require("./routes/webhook");
+const authRoutes = require("./routes/auth");
+const authMiddleware = require("./middleware/auth");
 
 const app = express();
 
@@ -47,8 +49,9 @@ app.use("/api", async (req, res, next) => {
 });
 
 // ─── Routes ───
-app.use("/api/payments", paymentRoutes);
-app.use("/api/webhook", webhookRoutes);
+app.use("/api/auth", authRoutes); // Public Login Route
+app.use("/api/payments", authMiddleware, paymentRoutes); // Protected Admin Routes
+app.use("/api/webhook", webhookRoutes); // Public Webhook Route
 
 // Health check
 app.get("/api/health", (req, res) => {
