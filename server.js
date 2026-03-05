@@ -14,7 +14,8 @@ app.use(
         origin: [
             "http://localhost:3000",
             "http://localhost:3001",
-            "https://jdw-admin.vercel.app"
+            "https://jdw-admin.vercel.app",
+            "https://jdw-admin-f0.vercel.app"
         ],
         credentials: true,
     })
