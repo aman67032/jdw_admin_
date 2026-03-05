@@ -74,20 +74,13 @@ router.post("/cashfree", express.raw({ type: "application/json" }), async (req, 
 
             // Extract custom fields if present
             const customFieldsArr = customerDetails.customer_fields || [];
-            const customFieldsObj = {
-                address: "",
-                city: "",
-                state: "",
-                pincode: ""
-            };
+            const customFieldsObj = {};
 
-            // Map frontend titles to our db keys
+            // Dynamically map all custom fields from the form
             customFieldsArr.forEach(field => {
-                const title = (field.title || "").toLowerCase();
-                if (title.includes("address")) customFieldsObj.address = field.value;
-                if (title.includes("city")) customFieldsObj.city = field.value;
-                if (title.includes("state")) customFieldsObj.state = field.value;
-                if (title.includes("pincode")) customFieldsObj.pincode = field.value;
+                if (field.title && field.value) {
+                    customFieldsObj[field.title] = field.value;
+                }
             });
 
             const paymentData = {
