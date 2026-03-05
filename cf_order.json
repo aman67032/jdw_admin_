@@ -1,0 +1,30 @@
+{
+  "cart_details": null,
+  "cf_order_id": "5470847476",
+  "created_at": "2026-03-05T23:57:24+05:30",
+  "customer_details": {
+    "customer_id": "c1d3bba2-7df9-4761-8070-62e7a281d9b3",
+    "customer_name": null,
+    "customer_email": "amanpratapsingh@jklu.edu.in",
+    "customer_phone": "+919456608637",
+    "customer_uid": null
+  },
+  "entity": "order",
+  "order_amount": 1,
+  "order_currency": "INR",
+  "order_expiry_time": "2026-04-04T23:57:24+05:30",
+  "order_id": "CFPay_open-studio-pass_58c4e529_rty345c0a6b_1772735201460",
+  "order_meta": {
+    "return_url": "https://payments.cashfree.com/links/pggrowthsvc/v1/payment-handler",
+    "notify_url": null,
+    "payment_methods": null
+  },
+  "order_note": "payment_form_187726844",
+  "order_splits": [],
+  "order_status": "PAID",
+  "order_tags": {
+    "cf_form_id": "187726844"
+  },
+  "payment_session_id": "session_o9C8SvVSrLzWrokBvEQO8Vn-nYS48O91dwsncNKswavcQdaEt81Nfy8MNncydWJCKUpjPg9ZScPUDhwKrA7YxD0NYtnx-D6koPEsDQ2gg6wxd03BVjdE3rCCcMMpayment",
+  "terminal_data": null
+}

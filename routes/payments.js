@@ -157,6 +157,24 @@ router.post("/import", async (req, res) => {
         const order = response.data;
         const customerDetails = order.customer_details || {};
 
+        // Extract custom fields if present
+        const customFieldsArr = customerDetails.customer_fields || [];
+        const customFieldsObj = {
+            address: "",
+            city: "",
+            state: "",
+            pincode: ""
+        };
+
+        // Map frontend titles to our db keys
+        customFieldsArr.forEach(field => {
+            const title = (field.title || "").toLowerCase();
+            if (title.includes("address")) customFieldsObj.address = field.value;
+            if (title.includes("city")) customFieldsObj.city = field.value;
+            if (title.includes("state")) customFieldsObj.state = field.value;
+            if (title.includes("pincode")) customFieldsObj.pincode = field.value;
+        });
+
         const orderData = {
             orderId: order.order_id || order.cf_order_id,
             cfOrderId: order.cf_order_id,
@@ -165,6 +183,7 @@ router.post("/import", async (req, res) => {
             customerName: customerDetails.customer_name || "",
             customerEmail: customerDetails.customer_email || "",
             customerPhone: customerDetails.customer_phone || "",
+            customFields: customFieldsObj,
             amount: order.order_amount || 0,
             currency: order.order_currency || "INR",
             status: order.order_status || "PENDING",

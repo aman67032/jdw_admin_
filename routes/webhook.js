@@ -72,6 +72,24 @@ router.post("/cashfree", express.raw({ type: "application/json" }), async (req, 
                 }
             }
 
+            // Extract custom fields if present
+            const customFieldsArr = customerDetails.customer_fields || [];
+            const customFieldsObj = {
+                address: "",
+                city: "",
+                state: "",
+                pincode: ""
+            };
+
+            // Map frontend titles to our db keys
+            customFieldsArr.forEach(field => {
+                const title = (field.title || "").toLowerCase();
+                if (title.includes("address")) customFieldsObj.address = field.value;
+                if (title.includes("city")) customFieldsObj.city = field.value;
+                if (title.includes("state")) customFieldsObj.state = field.value;
+                if (title.includes("pincode")) customFieldsObj.pincode = field.value;
+            });
+
             const paymentData = {
                 orderId: order.order_id || order.cf_order_id || `wh_${Date.now()}`,
                 cfOrderId: order.cf_order_id || "",
@@ -80,6 +98,7 @@ router.post("/cashfree", express.raw({ type: "application/json" }), async (req, 
                 customerName: customerDetails.customer_name || "",
                 customerEmail: customerDetails.customer_email || "",
                 customerPhone: customerDetails.customer_phone || "",
+                customFields: customFieldsObj,
                 amount: order.order_amount || payment.payment_amount || 0,
                 currency: order.order_currency || form.form_currency || "INR",
                 status: order.order_status || payment.payment_status || "PAID",
