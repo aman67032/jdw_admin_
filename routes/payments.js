@@ -161,14 +161,11 @@ router.post("/school-registration", upload.single("invoice"), async (req, res) =
             }
         }
 
-        // Validate Coupon
-        if (couponCode !== "MAX26") {
-            return res.status(400).json({ success: false, error: "Invalid coupon code" });
-        }
+        const isCouponValid = couponCode === "MAX26";
 
-        // Validate File
-        if (!req.file) {
-            return res.status(400).json({ success: false, error: "Invoice file is required to apply the coupon" });
+        // Validate requirements based on coupon
+        if (!isCouponValid && !req.file) {
+            return res.status(400).json({ success: false, error: "Invoice file upload is required if no valid coupon is provided." });
         }
 
         const paymentData = {
@@ -179,17 +176,20 @@ router.post("/school-registration", upload.single("invoice"), async (req, res) =
             customerEmail: customerEmail || "",
             customerPhone: customerPhone || "",
             customFields: parsedCustomFields,
-            amount: 0, // Coupon makes it free
+            amount: 0,
             currency: "INR",
-            status: "PAID",
-            paymentMethod: "COUPON: MAX26",
+            status: isCouponValid ? "PAID" : "PENDING", // Admins might need to verify uploaded invoices
+            paymentMethod: isCouponValid ? "COUPON: MAX26" : "INVOICE_UPLOAD",
             paymentTime: new Date(),
-            orderNote: `Registered via form using coupon.`,
-            invoiceFile: {
+            orderNote: isCouponValid ? "Registered via coupon MAX26." : "Registered via form with invoice upload.",
+        };
+
+        if (req.file) {
+            paymentData.invoiceFile = {
                 data: req.file.buffer,
                 contentType: req.file.mimetype
-            }
-        };
+            };
+        }
 
         const savedOrder = await Payment.create(paymentData);
 
