@@ -50,7 +50,7 @@ app.use("/api", async (req, res, next) => {
 
 // ─── Routes ───
 app.use("/api/auth", authRoutes); // Public Login Route
-app.use("/api/payments", authMiddleware, paymentRoutes); // Protected Admin Routes
+app.use("/api/payments", paymentRoutes); // Auth handled within specific routes
 app.use("/api/webhook", webhookRoutes); // Public Webhook Route
 
 // Health check

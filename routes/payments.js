@@ -3,6 +3,7 @@ const router = express.Router();
 const axios = require("axios");
 const multer = require("multer");
 const Payment = require("../models/Payment");
+const authMiddleware = require("../middleware/auth");
 
 // Configure multer to store files in memory as Buffers
 const upload = multer({
@@ -35,7 +36,7 @@ function getCashfreeHeaders() {
 
 // ─── GET /api/payments/stats/summary ───
 // Returns aggregate stats for all pass types
-router.get("/stats/summary", async (req, res) => {
+router.get("/stats/summary", authMiddleware, async (req, res) => {
     try {
         const pipeline = [
             { $match: { status: "PAID" } },
@@ -84,7 +85,7 @@ router.get("/stats/summary", async (req, res) => {
 // For Payment Forms, data comes via webhooks — not a list API.
 // This endpoint refreshes the status of existing orders from Cashfree
 // and returns guidance on webhook setup.
-router.get("/sync/:passType", async (req, res) => {
+router.get("/sync/:passType", authMiddleware, async (req, res) => {
     try {
         const { passType } = req.params;
         const linkId = PASS_TYPE_TO_LINK[passType];
