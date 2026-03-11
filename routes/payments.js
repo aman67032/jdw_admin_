@@ -228,7 +228,7 @@ router.get("/invoice/:orderId", async (req, res) => {
 
 // ─── POST /api/payments/import ───
 // Manually imports a specific order ID from Cashfree
-router.post("/import", async (req, res) => {
+router.post("/import", authMiddleware, async (req, res) => {
     try {
         const { orderId, passType } = req.body;
 
@@ -293,7 +293,7 @@ router.post("/import", async (req, res) => {
 
 // ─── GET /api/payments/:passType ───
 // Returns all payments for a given pass type with search & pagination
-router.get("/:passType", async (req, res) => {
+router.get("/:passType", authMiddleware, async (req, res) => {
     try {
         const { passType } = req.params;
         const { search, page = 1, limit = 50, status } = req.query;
