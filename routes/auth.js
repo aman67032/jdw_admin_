@@ -8,7 +8,7 @@ router.post("/login", (req, res) => {
 
         const adminUsername = process.env.ADMIN_USERNAME;
         const adminPassword = process.env.ADMIN_PASSWORD;
-        const jwtSecret = process.env.JWT_SECRET;
+        const jwtSecret = process.env.JWT_SECRET || "fallback_secret_for_local_dev_only";
 
         if (!username || !password) {
             return res.status(400).json({ success: false, error: "Username and password are required" });
