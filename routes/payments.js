@@ -347,4 +347,41 @@ router.get("/:passType", authMiddleware, async (req, res) => {
     }
 });
 
+// ─── PUT /api/payments/:orderId/status ───
+// Manually update the status of a payment (e.g., approve a pending school registration)
+router.put("/:orderId/status", authMiddleware, async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const { status } = req.body;
+
+        if (!status) {
+            return res.status(400).json({ success: false, error: "Status is required" });
+        }
+
+        const validStatuses = ["ACTIVE", "PAID", "EXPIRED", "CANCELLED", "PENDING"];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ success: false, error: "Invalid status" });
+        }
+
+        const payment = await Payment.findOneAndUpdate(
+            { orderId },
+            { status, paymentTime: status === "PAID" ? new Date() : undefined },
+            { new: true }
+        );
+
+        if (!payment) {
+            return res.status(404).json({ success: false, error: "Payment not found" });
+        }
+
+        res.json({
+            success: true,
+            message: `Order ${orderId} status updated to ${status}`,
+            data: payment
+        });
+    } catch (error) {
+        console.error("Error updating status:", error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 module.exports = router;
