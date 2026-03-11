@@ -8,6 +8,7 @@ const LINK_MAP = {
     passes: "day_pass",
     "open-studio-pass": "open_studio",
     "all-access-pass": "all_access",
+    "schooljdw": "school_pass"
 };
 
 // Verify Cashfree webhook signature

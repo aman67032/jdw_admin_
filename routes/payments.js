@@ -1,7 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
+const multer = require("multer");
 const Payment = require("../models/Payment");
+
+// Configure multer to store files in memory as Buffers
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
+});
 
 // Link ID to passType mapping
 const LINK_MAP = {
@@ -139,6 +146,85 @@ router.get("/sync/:passType", async (req, res) => {
 });
 
 
+// ─── POST /api/payments/school-registration ───
+// Direct registration via coupon with file upload
+router.post("/school-registration", upload.single("invoice"), async (req, res) => {
+    try {
+        const { customerName, customerEmail, customerPhone, couponCode, customFields } = req.body;
+
+        let parsedCustomFields = {};
+        if (customFields) {
+            try {
+                parsedCustomFields = JSON.parse(customFields);
+            } catch (e) {
+                console.error("Error parsing customFields", e);
+            }
+        }
+
+        // Validate Coupon
+        if (couponCode !== "MAX26") {
+            return res.status(400).json({ success: false, error: "Invalid coupon code" });
+        }
+
+        // Validate File
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: "Invoice file is required to apply the coupon" });
+        }
+
+        const paymentData = {
+            orderId: `school_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+            linkId: "schooljdw",
+            passType: "school_pass",
+            customerName: customerName || "",
+            customerEmail: customerEmail || "",
+            customerPhone: customerPhone || "",
+            customFields: parsedCustomFields,
+            amount: 0, // Coupon makes it free
+            currency: "INR",
+            status: "PAID",
+            paymentMethod: "COUPON: MAX26",
+            paymentTime: new Date(),
+            orderNote: `Registered via form using coupon.`,
+            invoiceFile: {
+                data: req.file.buffer,
+                contentType: req.file.mimetype
+            }
+        };
+
+        const savedOrder = await Payment.create(paymentData);
+
+        res.json({
+            success: true,
+            message: "Student registered successfully",
+            data: { orderId: savedOrder.orderId }
+        });
+
+    } catch (error) {
+        console.error("School registration error:", error.message);
+        res.status(500).json({ success: false, error: "Failed to process registration" });
+    }
+});
+
+// ─── GET /api/payments/invoice/:orderId ───
+// Retrieve binary invoice file for an order
+router.get("/invoice/:orderId", async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const payment = await Payment.findOne({ orderId });
+
+        if (!payment || !payment.invoiceFile || !payment.invoiceFile.data) {
+            return res.status(404).json({ success: false, error: "Invoice not found or no file attached" });
+        }
+
+        res.set("Content-Type", payment.invoiceFile.contentType);
+        // Important: set Content-Disposition to inline or attachment based on what you want
+        res.set("Content-Disposition", `inline; filename="invoice_${orderId}"`);
+        res.send(payment.invoiceFile.data);
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // ─── POST /api/payments/import ───
 // Manually imports a specific order ID from Cashfree
 router.post("/import", async (req, res) => {
@@ -211,7 +297,10 @@ router.get("/:passType", async (req, res) => {
         const { passType } = req.params;
         const { search, page = 1, limit = 50, status } = req.query;
 
-        if (!PASS_TYPE_TO_LINK[passType]) {
+        // Custom validation check
+        const allowedTypes = [...Object.keys(PASS_TYPE_TO_LINK), "school_pass"];
+
+        if (!allowedTypes.includes(passType)) {
             return res
                 .status(400)
                 .json({ success: false, error: "Invalid pass type" });
@@ -235,6 +324,7 @@ router.get("/:passType", async (req, res) => {
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const total = await Payment.countDocuments(query);
         const payments = await Payment.find(query)
+            .select("-invoiceFile.data")
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(parseInt(limit))

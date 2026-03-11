@@ -17,7 +17,7 @@ const paymentSchema = new mongoose.Schema(
     },
     passType: {
       type: String,
-      enum: ["day_pass", "open_studio", "all_access"],
+      enum: ["day_pass", "open_studio", "all_access", "school_pass"],
       required: true,
       index: true,
     },
@@ -65,6 +65,10 @@ const paymentSchema = new mongoose.Schema(
     rawData: {
       type: mongoose.Schema.Types.Mixed,
     },
+    invoiceFile: {
+      data: Buffer,
+      contentType: String
+    }
   },
   {
     timestamps: true,
